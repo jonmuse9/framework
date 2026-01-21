@@ -10,6 +10,7 @@ import tempfile
 import shutil
 from pathlib import Path
 from datetime import datetime, timezone
+import os
 
 from wai_cli.sync_manager import SyncManager
 
@@ -892,6 +893,127 @@ class TestSyncHealthCalculation(unittest.TestCase):
         # Patch version drift shouldn't trigger stale status alone
         self.assertEqual(health['status'], 'healthy')
         self.assertEqual(health['kb_version_drift'], '3 patch versions behind')
+
+
+class TestDownloadErrorHandling(unittest.TestCase):
+    """Test error handling in download_kb_updates."""
+
+    def setUp(self):
+        """Create temporary directories for testing."""
+        self.temp_dir = tempfile.mkdtemp()
+        self.hub_path = Path(self.temp_dir) / 'hub'
+        self.spoke_path = Path(self.temp_dir) / 'spoke'
+
+        self.hub_path.mkdir(parents=True)
+        self.spoke_path.mkdir(parents=True)
+        (self.spoke_path / 'WAI-Spoke').mkdir()
+
+        self.manager = SyncManager(self.hub_path, self.spoke_path)
+
+    def tearDown(self):
+        """Clean up temporary directories."""
+        shutil.rmtree(self.temp_dir, ignore_errors=True)
+
+    def test_download_kb_updates_with_missing_kb_directory(self):
+        """Test error when hub KB directory doesn't exist."""
+        # Don't create hub/knowledge directory
+
+        # Should raise FileNotFoundError
+        with self.assertRaises(FileNotFoundError):
+            self.manager.download_kb_updates()
+
+
+class TestSignalHashingEdgeCases(unittest.TestCase):
+    """Test signal hashing and duplicate detection edge cases."""
+
+    def setUp(self):
+        """Create temporary directories for testing."""
+        self.temp_dir = tempfile.mkdtemp()
+        self.hub_path = Path(self.temp_dir) / 'hub'
+        self.spoke_path = Path(self.temp_dir) / 'spoke'
+
+        self.hub_path.mkdir(parents=True)
+        self.spoke_path.mkdir(parents=True)
+        (self.spoke_path / 'WAI-Spoke').mkdir()
+        (self.hub_path / 'signals').mkdir()
+
+        self.manager = SyncManager(self.hub_path, self.spoke_path)
+
+    def tearDown(self):
+        """Clean up temporary directories."""
+        shutil.rmtree(self.temp_dir, ignore_errors=True)
+
+    def test_load_uploaded_hashes_with_missing_file(self):
+        """Test loading uploaded hashes when file doesn't exist."""
+        # Reference a signals file that doesn't exist
+        signals_file = self.hub_path / 'signals' / 'aggregated-signals.jsonl'
+
+        hashes = self.manager._load_existing_signal_hashes(signals_file)
+        # Should return empty set when file not found
+        self.assertEqual(len(hashes), 0)
+
+
+class TestUpdateSpokeSignalsWithTimestamps(unittest.TestCase):
+    """Test updating spoke signals with upload timestamps."""
+
+    def setUp(self):
+        """Create temporary directories for testing."""
+        self.temp_dir = tempfile.mkdtemp()
+        self.hub_path = Path(self.temp_dir) / 'hub'
+        self.spoke_path = Path(self.temp_dir) / 'spoke'
+
+        self.hub_path.mkdir(parents=True)
+        self.spoke_path.mkdir(parents=True)
+        (self.spoke_path / 'WAI-Spoke').mkdir()
+        (self.hub_path / 'signals').mkdir()
+
+        self.manager = SyncManager(self.hub_path, self.spoke_path)
+
+    def tearDown(self):
+        """Clean up temporary directories."""
+        shutil.rmtree(self.temp_dir, ignore_errors=True)
+
+    def test_update_spoke_signals_integration(self):
+        """Test signal upload and timestamp marking via upload_signals."""
+        # Create signals file with high-impact signal
+        signals_file = self.spoke_path / 'WAI-Spoke' / 'WAI-Signals.jsonl'
+
+        signal1 = {
+            "timestamp": "2025-01-21T12:00:00Z",
+            "by": "Claude Sonnet 4.5",
+            "offers": [{"type": "pattern", "topic": "Test1", "impact": 9, "context": "Test"}],
+            "flags": {"ready_for_hub": True}
+        }
+
+        signal2 = {
+            "timestamp": "2025-01-21T12:00:00Z",
+            "by": "Claude Sonnet 4.5",
+            "offers": [{"type": "pattern", "topic": "Test2", "impact": 5, "context": "Test"}],
+            "flags": {}
+        }
+
+        with open(signals_file, 'w') as f:
+            f.write(json.dumps(signal1) + '\n')
+            f.write(json.dumps(signal2) + '\n')
+
+        # Upload signals
+        result = self.manager.upload_signals()
+
+        # Verify upload occurred
+        self.assertEqual(result['signals_uploaded'], 1)
+        self.assertEqual(result['signals_total'], 2)
+
+        # Read back and verify timestamps were added
+        with open(signals_file, 'r') as f:
+            lines = f.readlines()
+            updated_signal1 = json.loads(lines[0])
+            updated_signal2 = json.loads(lines[1])
+
+        # First signal should have upload timestamp
+        self.assertIn('uploaded_to_hub_at', updated_signal1)
+
+        # Second signal should not have upload timestamp (low impact)
+        self.assertNotIn('uploaded_to_hub_at', updated_signal2)
 
 
 if __name__ == '__main__':
