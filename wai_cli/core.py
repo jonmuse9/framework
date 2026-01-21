@@ -2393,7 +2393,7 @@ Examples:
             self._cmd_group(args)
         elif args.command == 'sync':
             self._cmd_sync(args)
-        elif args.command == 'update':
+        elif args.command in ('absorbe', 'update'):
             self._cmd_update(args)
         elif args.command == 'closeout':
             self._cmd_closeout(args)

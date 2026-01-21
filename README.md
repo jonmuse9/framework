@@ -293,32 +293,65 @@ The `WAI` command-line interface orchestrates your Hub, Spoke-Projects, and the 
 
 ### Command Glossary
 
+> **For detailed documentation, see [docs/CLI_REFERENCE.md](docs/CLI_REFERENCE.md)**
+
 ```bash
-# Project Commands
-WAI-CLI init [path]           # Initialize Wheelwright in a project
-WAI-CLI status                # Show current wheel state and health
-WAI context               # Output context for LLM paste
-WAI closeout              # Generate session closeout files
+# Core Commands
+wai init [path]                    # Initialize Wheelwright in a project
+wai status                         # Show current spoke state and health
+wai absorbe / update               # Process seed folders, archive sprawl
+wai context                        # Output context for LLM paste
+wai version                        # Show Wheelwright version
 
-# Hub Commands
-WAI hub create [path]     # Create your personal Hub
-WAI hub status            # Show Hub health and metrics
-WAI hub locate            # Find Hub location on filesystem
+# Session Management
+wai closeout                       # Generate session closeout
+wai shipit                         # Closeout + git commit
+wai time                           # Show token usage estimate
+wai stats                          # Show session analytics
+wai sync [--all]                   # Upgrade spoke structure
 
-# Spoke Commands
-WAI spoke list            # List available spokes
-WAI spoke add <name>      # Add spoke to current wheel
-WAI spoke remove <name>   # Remove spoke from wheel
+# Hub Management
+wai hub create [path]              # Create your personal Hub
+wai hub locate                     # Find Hub location on filesystem
 
-# Sync Commands
-WAI sync                  # Sync current wheel with Hub
-WAI sync --all            # Sync all wheels with Hub
-WAI projects scan         # Discover existing Spoke-Projects
+# Project Management
+wai projects add [--scan PATH...]  # Register projects with hub
+wai projects list [--group NAME]   # List registered projects
 
-# Info Commands
-WAI version               # Show Wheelwright version
-WAI help                  # Display help information
+# Group Management
+wai group create <name>            # Create project group
+wai group list [-v]                # List all groups
+wai group add-spoke <group> <spoke> # Add spoke to group
+wai group remove-spoke <group> <spoke> # Remove spoke from group
+wai group delete <name>            # Delete a group
+
+# Baseline Tracking
+wai baseline enable                # Enable baseline mode
+wai baseline disable               # Disable and lock baseline
+wai baseline status                # Show baseline status
+wai baseline run                   # Run baseline comparison
+
+# Template Management
+wai template create <name>         # Create reusable template
+wai template list                  # List available templates
+wai template apply <name> <path>   # Apply template to project
+wai template delete <name>         # Delete a template
+
+# IDE Integration
+wai configure-ide detect           # Detect IDEs in use
+wai configure-ide list             # List supported IDEs
+wai configure-ide setup [ide]      # Setup IDE configuration
+wai configure-ide capabilities     # Show IDE capabilities
+wai configure-ide optimize         # Get optimization suggestions
+
+# Interactive Mode
+wai                                # Launch interactive menu (context-aware)
 ```
+
+**Not Yet Implemented:**
+- `wai hub status` - Show Hub health and metrics (use `wai projects list` instead)
+- `wai spoke list/add/remove` - Spoke management (use `wai projects` commands)
+- `wai help` - Dedicated help command (use `wai --help` or interactive mode)
 
 ---
 

@@ -73,6 +73,9 @@ yarn-error.log*
 test-output/
 *.tmp
 
+# Claude Code
+.claude/
+
 # Wheelwright session logs (temporary)
 WAI-Spoke/WAI-Session-Log.jsonl
 WAI-Spoke/WAI-Baseline-Log.jsonl
