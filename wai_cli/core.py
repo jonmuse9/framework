@@ -415,9 +415,8 @@ Examples:
         group_delete.add_argument('name', help='Group name')
         group_delete.add_argument('--force', '-f', action='store_true', help='Skip confirmation')
 
-        # Lug commands
         lug_parser = subparsers.add_parser('lug', help='Lug task/dependency graph management')
-        lug_parser.add_argument('lug_args', nargs='*', help='Lug sub-command and arguments')
+        lug_parser.add_argument('lug_args', nargs=argparse.REMAINDER, help='Lug sub-command and arguments')
 
         # Sync command (structure upgrade)
         sync_parser = subparsers.add_parser('sync', help='Upgrade spoke structure')

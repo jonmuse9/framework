@@ -102,40 +102,71 @@ Examples:
 
 
 def _create_lug(manager: LugManager, args: list):
-    """Create a new Lug interactively."""
-    if not args:
-        print_error("Usage: wai lug create <title>")
+    """Create a new Lug interactively or via flags."""
+    import argparse
+    parser = argparse.ArgumentParser(description="Create Lug", add_help=False)
+    parser.add_argument('--title', help='Lug title')
+    parser.add_argument('--type', dest='lug_type', help='Lug type')
+    parser.add_argument('--priority', help='Priority')
+    parser.add_argument('--impact', help='Impact')
+    parser.add_argument('--value', type=int, help='Value/ROI')
+    parser.add_argument('--description', help='Description/Justification')
+    parser.add_argument('--origin', help='Origin')
+
+    # Parse known args, leaving rest for title if needed
+    parsed, unknown = parser.parse_known_args(args)
+    
+    # If title provided via flag, use it. Otherwise join positional args.
+    title = parsed.title or ((' '.join(unknown)) if unknown else None)
+
+    if not title:
+        print_error("Usage: wai lug create <title> [options]")
         sys.exit(1)
     
-    title = ' '.join(args)
+    # If explicit flags provided, we skip interactive prompts for those fields
+    # But if it's mixed provided/not provided, we might still prompt? 
+    # For now, let's assume if flags are present we use them, if not we default.
+    # Interactive mode is better if ONLY title is provided.
     
-    print_info(f"\n📝 Creating Lug: {title}\n")
-    
-    # Prompt for type
-    print_info("Type options: epic, issue, bug, work, ask (or custom)")
-    lug_type = input("  Type [work]: ").strip() or 'work'
-    
-    # Prompt for priority
-    print_info("Priority options: low, medium, high")
-    priority = input("  Priority [medium]: ").strip() or 'medium'
-    
-    # Prompt for impact
-    print_info("Impact options: small, medium, large")
-    impact = input("  Impact [medium]: ").strip() or 'medium'
-    
-    # Prompt for value
-    print_info("Value: 1-10 (ROI score)")
-    value_input = input("  Value [5]: ").strip()
-    value = int(value_input) if value_input else 5
-    
-    # Optional justification
-    print_info("Justification (optional, press Enter to skip):")
-    justification = input("  > ").strip() or None
-    
-    # Optional origin
-    print_info("Origin (optional, e.g., 'user_request:chat', press Enter to skip):")
-    origin = input("  > ").strip() or None
-    
+    interactive = not (parsed.lug_type or parsed.priority or parsed.impact or parsed.value)
+
+    if interactive:
+        print_info(f"\n📝 Creating Lug: {title}\n")
+        
+        # Prompt for type
+        print_info("Type options: epic, issue, bug, work, ask (or custom)")
+        lug_type = input("  Type [work]: ").strip() or 'work'
+        
+        # Prompt for priority
+        print_info("Priority options: low, medium, high")
+        priority = input("  Priority [medium]: ").strip() or 'medium'
+        
+        # Prompt for impact
+        print_info("Impact options: small, medium, large")
+        impact = input("  Impact [medium]: ").strip() or 'medium'
+        
+        # Prompt for value
+        print_info("Value: 1-10 (ROI score)")
+        value_input = input("  Value [5]: ").strip()
+        value = int(value_input) if value_input else 5
+        
+        # Optional justification
+        print_info("Justification (optional, press Enter to skip):")
+        justification = input("  > ").strip() or None
+        
+        # Optional origin
+        print_info("Origin (optional, e.g., 'user_request:chat', press Enter to skip):")
+        origin = input("  > ").strip() or None
+
+    else:
+        # Non-interactive / Flags mode
+        lug_type = parsed.lug_type or 'work'
+        priority = parsed.priority or 'medium'
+        impact = parsed.impact or 'medium'
+        value = parsed.value or 5
+        justification = parsed.description
+        origin = parsed.origin
+
     # Create the Lug
     lug = manager.create_lug(
         title=title,

@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-01-19T16:33:11.910369",
+  "generated_at": "2026-01-19T19:24:27.575123",
   "project": {
     "name": "Unknown",
     "version": "0.0.0"
@@ -26,16 +26,181 @@
       "type": "work",
       "priority": "medium",
       "title": "Test Child"
+    },
+    {
+      "type": "Epic",
+      "priority": "1",
+      "title": "Multi-Agent Trends Absorption"
+    },
+    {
+      "type": "epic",
+      "priority": "high",
+      "title": "Lug System Consolidation"
+    },
+    {
+      "type": "task",
+      "priority": "high",
+      "title": "Define WAI-Lugs.jsonl Schema"
+    },
+    {
+      "type": "feature",
+      "priority": "high",
+      "title": "Implement wai lug CLI Commands"
+    },
+    {
+      "type": "feature",
+      "priority": "high",
+      "title": "Implement wai ready Command"
+    },
+    {
+      "type": "task",
+      "priority": "medium",
+      "title": "Migrate Existing Backlogs"
+    },
+    {
+      "type": "task",
+      "priority": "medium",
+      "title": "Update WAI-Guide.md to Reference Lugs"
+    },
+    {
+      "type": "epic",
+      "priority": "high",
+      "title": "IDE Optimization System"
+    },
+    {
+      "type": "task",
+      "priority": "high",
+      "title": "Define IDE Optimization Checklist"
+    },
+    {
+      "type": "feature",
+      "priority": "high",
+      "title": "Implement IDE Audit Function"
+    },
+    {
+      "type": "feature",
+      "priority": "high",
+      "title": "Implement Auto-Fix Prompts"
+    },
+    {
+      "type": "task",
+      "priority": "medium",
+      "title": "Add Audit to Session Start"
+    },
+    {
+      "type": "task",
+      "priority": "high",
+      "title": "Generate .github/copilot-instructions.md"
+    },
+    {
+      "type": "epic",
+      "priority": "high",
+      "title": "Backpressure Configuration"
+    },
+    {
+      "type": "task",
+      "priority": "high",
+      "title": "Define WAI-Backpressure.yaml Schema"
+    },
+    {
+      "type": "feature",
+      "priority": "medium",
+      "title": "Implement Backpressure Setup Wizard"
+    },
+    {
+      "type": "feature",
+      "priority": "high",
+      "title": "Implement wai check Command"
+    },
+    {
+      "type": "task",
+      "priority": "medium",
+      "title": "Add Backpressure Signal Type"
+    },
+    {
+      "type": "task",
+      "priority": "medium",
+      "title": "Integrate with Closeout Flow"
+    },
+    {
+      "type": "epic",
+      "priority": "medium",
+      "title": "Feature Specs Directory"
+    },
+    {
+      "type": "task",
+      "priority": "medium",
+      "title": "Define WAI-Features/ Structure"
+    },
+    {
+      "type": "task",
+      "priority": "medium",
+      "title": "Create SPEC.md Template"
+    },
+    {
+      "type": "task",
+      "priority": "medium",
+      "title": "Create PLAN.md Template"
+    },
+    {
+      "type": "task",
+      "priority": "medium",
+      "title": "Create TEST-CASES.md Template"
+    },
+    {
+      "type": "feature",
+      "priority": "low",
+      "title": "Implement wai feature CLI Commands"
+    },
+    {
+      "type": "epic",
+      "priority": "medium",
+      "title": "Multi-Agent Foundation"
+    },
+    {
+      "type": "task",
+      "priority": "medium",
+      "title": "Add Agent Tracking to Sessions"
+    },
+    {
+      "type": "task",
+      "priority": "medium",
+      "title": "Document Colony Architecture"
+    },
+    {
+      "type": "task",
+      "priority": "low",
+      "title": "Design Hub Ready-Work Queue"
+    },
+    {
+      "type": "task",
+      "priority": "low",
+      "title": "Research Gas Town Integration"
+    },
+    {
+      "type": "epic",
+      "priority": "high",
+      "title": "System Sketch Integration"
+    },
+    {
+      "type": "task",
+      "priority": "high",
+      "title": "Add System Sketch to WAI-Guide.md Template"
+    },
+    {
+      "type": "task",
+      "priority": "medium",
+      "title": "Integrate Questions into ADAPTIVE Workflow"
     }
   ],
-  "open_lugs_summary": "4 open: 1 high, 3 medium",
+  "open_lugs_summary": "37 open: 15 high, 18 medium, 3 low",
   "next_session_lug": {
     "type": "bug",
     "priority": "high",
     "title": "Verify test bug"
   },
   "last_shipit": {
-    "timestamp": "2026-01-19T16:33:11.859060",
+    "timestamp": "2026-01-19T19:24:27.491905",
     "summary": "No conversation log found",
     "key_topics": []
   },
