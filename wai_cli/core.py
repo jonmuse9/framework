@@ -8,16 +8,10 @@ import sys
 import argparse
 import json
 import os
-import platform
 from pathlib import Path
-from typing import Optional, Dict, Any, Tuple, List
 import subprocess
-from git import Repo, exc as git_exc
 
-from .init import framework_first_init, init_spoke, init_spoke_interactive, check_spoke_initialized
-from .hub import HubManager
-from .projects import ProjectDiscovery
-from .groups import GroupsManager
+from .init import check_spoke_initialized
 from .utils.input import print_info, print_success, print_error, print_warning, safe_menu_choice
 from .utils.exceptions import WAIError
 from .utils.paths import normalize_path
@@ -89,14 +83,14 @@ from .ui.analytics_menus import (
     get_hub_learnings_summary,
     show_learnings_by_category,
     get_spoke_details,
-    show_baseline_menu,
-    show_testing_menu
+    show_baseline_menu
 )
 
 from .ui.config_menus import (
     show_evolution_menu,
     show_features_menu,
     show_integrations_menu,
+    show_testing_menu,
     show_help_menu
 )
 

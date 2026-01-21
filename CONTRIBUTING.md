@@ -54,17 +54,33 @@ python -m pytest tests/
 ## Project Structure
 
 ```
-wheelwright/
-├── WAI                      # Main CLI entry point
-├── WAI-Framework/           # Core framework modules
-├── WAI-Hub/                 # Hub management
+framework/
+├── WAI                       # Main CLI entry point (shell script)
+├── wai_cli/                  # Modular CLI implementation
+│   ├── core.py               # Orchestration and routing
+│   ├── commands/             # Command handlers (18 modules)
+│   ├── ui/                   # Interactive menu system
+│   ├── utils/                # Shared utilities
+│   └── integrations/         # IDE/tool integrations
 ├── templates/                # Template files
 │   ├── wheel/                # Wheel templates
 │   └── hub/                  # Hub templates
 ├── docs/                     # Documentation
-├── examples/                 # Example wheels
-└── tests/                    # Test suite
+│   ├── architecture/         # Architecture documentation
+│   ├── QUICKSTART.md
+│   └── SPOKES.md
+├── tests/                    # Test suite
+│   ├── unit/                 # Unit tests
+│   ├── integration/          # Integration tests
+│   └── scripts/              # Smoke test scripts
+├── WAI-Spoke/                # This project's own Wheelwright context
+├── CHANGELOG.md              # Version history
+└── README.md                 # Project overview
 ```
+
+**Architecture Documentation:**
+- [CLI Module Structure](docs/architecture/CLI_MODULE_STRUCTURE.md) - Detailed CLI architecture
+- [Framework Overview](docs/architecture/FRAMEWORK_OVERVIEW.md) - High-level architecture
 
 ## Coding Standards
 

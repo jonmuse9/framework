@@ -141,6 +141,39 @@ Planned integrations:
 - Lazy hub sync
 - Minimal dependencies
 
+## CLI Architecture
+
+The Wheelwright CLI (`wai_cli/`) uses a modular architecture for maintainability and extensibility:
+
+```
+wai_cli/
+├── core.py                  # Orchestration and routing
+├── commands/                # Command implementations
+│   ├── init.py
+│   ├── status.py
+│   ├── sync.py
+│   └── ... (15+ commands)
+├── ui/                      # Interactive menu system
+│   ├── core_menus.py
+│   ├── hub_menus.py
+│   ├── analytics_menus.py
+│   └── config_menus.py
+├── utils/                   # Shared utilities
+│   ├── cli_helpers.py
+│   ├── input.py
+│   └── paths.py
+└── baseline_helpers.py      # Baseline test management
+```
+
+**Key Design Principles:**
+- **Separation of Concerns:** Commands, UI, utilities, and orchestration are distinct
+- **Single Responsibility:** Each module handles one specific area
+- **Clear Dependencies:** Import hierarchy flows downward
+- **Testability:** Isolated modules enable comprehensive testing
+- **Extensibility:** New commands/menus can be added without touching core
+
+For detailed CLI architecture documentation, see [CLI_MODULE_STRUCTURE.md](CLI_MODULE_STRUCTURE.md).
+
 ---
 
 *Wheelwright Framework - wheelwright.ai*
