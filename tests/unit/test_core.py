@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-from wai_cli.core import WheelwrightCLI
+from wai_cli.baseline_helpers import get_latest_baseline_summary
 
 
 def test_get_latest_baseline_summary(tmp_path: Path) -> None:
@@ -18,8 +18,7 @@ def test_get_latest_baseline_summary(tmp_path: Path) -> None:
     log_path = wai_spoke / "WAI-Baseline-Log.jsonl"
     log_path.write_text(json.dumps(log_entry) + "\n")
 
-    cli = WheelwrightCLI()
-    summary = cli._get_latest_baseline_summary(spoke_dir)
+    summary = get_latest_baseline_summary(spoke_dir)
 
     assert "Codex CLI" in summary
     assert "GPT-5" in summary

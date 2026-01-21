@@ -72,3 +72,16 @@ def _show_history(manager: LugManager):
         for err in validation['errors']:
             print_error(f"  - {err}")
     print_info("")
+
+
+def cmd_changelog(args):
+    """
+    Handle history/changelog command.
+
+    Args:
+        args: Argument namespace (unused for now)
+    """
+    spoke_dir = Path.cwd()
+    # Extract remaining args from the namespace
+    history_args = getattr(args, 'history_args', [])
+    history_command_group(history_args, spoke_dir)

@@ -407,3 +407,16 @@ def _close_lug(manager: LugManager, args: list):
     except ValueError as e:
         print_error(str(e))
         sys.exit(1)
+
+
+def cmd_lug(args):
+    """
+    Handle lug command.
+
+    Args:
+        args: Argument namespace with lug subcommand details
+    """
+    spoke_dir = Path.cwd()
+    # Extract remaining args from the namespace
+    lug_args = getattr(args, 'lug_args', [])
+    lug_command_group(lug_args, spoke_dir)

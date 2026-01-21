@@ -78,3 +78,15 @@ def output_context(path: str = '.', render_markdown: bool = True) -> None:
     if not can_render and render_markdown:
         print("\nNote: Install 'rich' package for better markdown rendering:")
         print("  pip install rich\n")
+
+
+def cmd_context(args):
+    """
+    Handle context command.
+
+    Args:
+        args: Argument namespace with optional 'path' and 'no_render' attributes
+    """
+    path = getattr(args, 'path', '.')
+    render_markdown = not getattr(args, 'no_render', False)
+    output_context(path, render_markdown)

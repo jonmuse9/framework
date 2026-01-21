@@ -58,3 +58,14 @@ def sync_spoke(all_spokes: bool = False) -> None:
     print(f"   Hub: {hub_path}")
     print(f"   Spoke: {project_path.name}")
     print(f"\n   Note: Full hub sync feature coming in future release")
+
+
+def cmd_sync(args):
+    """
+    Handle sync command.
+
+    Args:
+        args: Argument namespace with optional 'all' attribute
+    """
+    all_spokes = getattr(args, 'all', False)
+    sync_spoke(all_spokes)

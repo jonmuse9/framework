@@ -9,8 +9,9 @@ from pathlib import Path
 
 from ..templates import TemplateManager
 from ..hub import HubManager
+from ..init import check_spoke_initialized
 from ..utils.input import safe_confirm, print_info, print_error, print_success
-from ..utils.paths import normalize_path, check_spoke_initialized
+from ..utils.paths import normalize_path
 
 
 def cmd_template(args):

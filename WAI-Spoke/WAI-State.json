@@ -4,7 +4,7 @@
     "structure_version": "v1",
     "description": "Wheelwright Framework - Core code and wheel templates for AI context persistence",
     "framework_path": "~/projects/wheelwright-ai/framework",
-    "hub_path": "/home/mario/projects/wheelwright-ai/hub",
+    "hub_path": "C:\\hub",
     "_paths_note": "This IS the framework. hub_path points to the developer's personal hub.",
     "github_repo": "wheelwright-ai/framework",
     "migrated_from_scf": "2.2.0",

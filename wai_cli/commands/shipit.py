@@ -11,8 +11,9 @@ from git import exc as git_exc
 
 from ..closeout import CloseoutProcessor
 from ..bootstrap import refresh_bootstrap
+from ..init import check_spoke_initialized
 from ..utils.input import safe_confirm, print_info, print_error, print_success, print_warning
-from ..utils.paths import normalize_path, check_spoke_initialized
+from ..utils.paths import normalize_path
 
 
 def cmd_shipit(args):

@@ -48,3 +48,13 @@ def generate_closeout() -> None:
 
     print(f"\n   Note: Automated closeout feature coming in future release")
     print()
+
+
+def cmd_closeout(args):
+    """
+    Handle closeout command.
+
+    Args:
+        args: Argument namespace (unused for now)
+    """
+    generate_closeout()

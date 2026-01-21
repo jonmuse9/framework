@@ -108,3 +108,14 @@ def show_status(path: str = '.') -> None:
             pass
 
     print()  # Final newline
+
+
+def cmd_status(args):
+    """
+    Handle status command.
+
+    Args:
+        args: Argument namespace with optional 'path' attribute
+    """
+    path = getattr(args, 'path', '.')
+    show_status(path)
