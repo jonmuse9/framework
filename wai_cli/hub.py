@@ -372,6 +372,8 @@ class HubManager:
         - hub_path/hub-profile.json
         - hub_path/registry/
         - hub_path/registry/wheel-projects.json
+        - hub_path/knowledge/ (KB structure)
+        - hub_path/signals/ (signal aggregation)
 
         Args:
             hub_path: Path to create hub at
@@ -409,6 +411,84 @@ class HubManager:
         with open(registry_path, 'w', encoding='utf-8') as f:
             json.dump(registry, f, indent=2, ensure_ascii=False)
             f.write('\n')
+
+        # Create KB and signal structures
+        self._create_kb_structure(hub_path)
+        self._create_signal_structure(hub_path)
+
+    def _create_kb_structure(self, hub_path: Path) -> None:
+        """
+        Create knowledge base directory structure.
+
+        Creates:
+        - hub_path/knowledge/
+        - hub_path/knowledge/patterns/
+        - hub_path/knowledge/decisions/
+        - hub_path/knowledge/learnings/
+        - hub_path/kb-manifest.json
+
+        Args:
+            hub_path: Path to hub root
+
+        Raises:
+            PathNotFoundError: If creation fails
+        """
+        try:
+            # Create knowledge directories
+            kb_path = hub_path / 'knowledge'
+            ensure_directory(kb_path)
+            ensure_directory(kb_path / 'patterns')
+            ensure_directory(kb_path / 'decisions')
+            ensure_directory(kb_path / 'learnings')
+
+            # Create kb-manifest.json
+            manifest = {
+                "version": "1.0.0",
+                "last_updated": datetime.now().isoformat(),
+                "patterns_count": 0,
+                "decisions_count": 0,
+                "learnings_count": 0,
+                "content_hash": ""
+            }
+
+            manifest_path = hub_path / 'kb-manifest.json'
+            with open(manifest_path, 'w', encoding='utf-8') as f:
+                json.dump(manifest, f, indent=2, ensure_ascii=False)
+                f.write('\n')
+
+        except PermissionError as e:
+            raise PathNotFoundError(f"Permission denied creating KB structure: {e}")
+        except Exception as e:
+            raise PathNotFoundError(f"Failed to create KB structure: {e}")
+
+    def _create_signal_structure(self, hub_path: Path) -> None:
+        """
+        Create signal aggregation directory structure.
+
+        Creates:
+        - hub_path/signals/
+        - hub_path/signals/by-spoke/
+        - hub_path/signals/aggregated/
+        - hub_path/signals/aggregated/by-type/
+
+        Args:
+            hub_path: Path to hub root
+
+        Raises:
+            PathNotFoundError: If creation fails
+        """
+        try:
+            # Create signals directories
+            signals_path = hub_path / 'signals'
+            ensure_directory(signals_path)
+            ensure_directory(signals_path / 'by-spoke')
+            ensure_directory(signals_path / 'aggregated')
+            ensure_directory(signals_path / 'aggregated' / 'by-type')
+
+        except PermissionError as e:
+            raise PathNotFoundError(f"Permission denied creating signal structure: {e}")
+        except Exception as e:
+            raise PathNotFoundError(f"Failed to create signal structure: {e}")
 
     def get_or_create_hub(
         self,
@@ -471,3 +551,98 @@ class HubManager:
             return hub_path
 
         return discovered_hub
+
+
+def get_hub_kb_version(hub_path: Path) -> str:
+    """
+    Get KB version from kb-manifest.json.
+
+    Args:
+        hub_path: Path to hub root
+
+    Returns:
+        Version string (e.g., "1.0.0")
+
+    Raises:
+        FileNotFoundError: If kb-manifest.json does not exist
+        ValueError: If manifest is invalid or missing version
+
+    Examples:
+        >>> version = get_hub_kb_version(Path("/home/user/hub"))
+        "1.0.0"
+    """
+    manifest_path = hub_path / 'kb-manifest.json'
+
+    if not manifest_path.exists():
+        raise FileNotFoundError(f"kb-manifest.json not found at {hub_path}")
+
+    try:
+        with open(manifest_path, 'r', encoding='utf-8') as f:
+            manifest = json.load(f)
+
+        version = manifest.get('version')
+        if not version:
+            raise ValueError("kb-manifest.json missing 'version' field")
+
+        return version
+
+    except json.JSONDecodeError as e:
+        raise ValueError(f"Invalid JSON in kb-manifest.json: {e}")
+    except Exception as e:
+        raise ValueError(f"Failed to read kb-manifest.json: {e}")
+
+
+def get_hub_kb_hash(hub_path: Path) -> str:
+    """
+    Calculate content hash for KB change detection.
+
+    Hashes all content in knowledge/ directory to detect changes.
+    Uses SHA-256 hash of concatenated file contents sorted by path.
+
+    Args:
+        hub_path: Path to hub root
+
+    Returns:
+        SHA-256 hash string (hex)
+
+    Examples:
+        >>> hash_value = get_hub_kb_hash(Path("/home/user/hub"))
+        "a3f5c8b2..."
+    """
+    import hashlib
+
+    kb_path = hub_path / 'knowledge'
+
+    if not kb_path.exists():
+        return ""
+
+    # Collect all files in knowledge/ directory
+    files = []
+    try:
+        for pattern in ['patterns', 'decisions', 'learnings']:
+            pattern_path = kb_path / pattern
+            if pattern_path.exists():
+                files.extend(sorted(pattern_path.glob('**/*')))
+    except Exception:
+        return ""
+
+    # Calculate hash of all file contents
+    hasher = hashlib.sha256()
+
+    for file_path in sorted(files):
+        if not file_path.is_file():
+            continue
+
+        try:
+            # Hash relative path
+            rel_path = file_path.relative_to(kb_path)
+            hasher.update(str(rel_path).encode('utf-8'))
+
+            # Hash file content
+            with open(file_path, 'rb') as f:
+                hasher.update(f.read())
+        except Exception:
+            # Skip files that can't be read
+            continue
+
+    return hasher.hexdigest()
