@@ -137,6 +137,22 @@ class CloseoutProcessor:
         results['integration_status'] = integration_status
         results['steps_completed'].append(f"Integrations refreshed: {integration_status['updated']} updated")
 
+        # Step 9: Check sync health
+        print_info("  Step 9/10: Checking sync health...")
+        sync_health = self._check_sync_health()
+        if sync_health:
+            results['sync_health'] = sync_health
+            if sync_health['status'] in ['stale', 'outdated']:
+                warning_msg = f"Sync recommended: {sync_health['status']}"
+                if sync_health['pending_signals'] > 0:
+                    warning_msg += f" ({sync_health['pending_signals']} pending signals)"
+                results['warnings'].append(warning_msg)
+                results['steps_completed'].append(f"Sync health: {sync_health['status']} - sync recommended")
+            else:
+                results['steps_completed'].append(f"Sync health: {sync_health['status']}")
+        else:
+            results['steps_completed'].append("Sync health: No hub found")
+
         print_success("\n✓ Closeout Complete!\n")
 
         return results
@@ -305,6 +321,17 @@ class CloseoutProcessor:
             for warning in results['warnings']:
                 print_warning(f"    ⚠️  {warning}")
 
+        # Show sync health if needs attention
+        sync_health = results.get('sync_health')
+        if sync_health and sync_health['status'] in ['stale', 'outdated', 'never_synced']:
+            print_info("\n  Sync Health:")
+            print_warning(f"    ⚠️  Status: {sync_health['status']}")
+            if sync_health['pending_signals'] > 0:
+                print_warning(f"    ⚠️  {sync_health['pending_signals']} pending signals ready for upload")
+            if sync_health['kb_version_drift']:
+                print_warning(f"    ⚠️  KB drift: {sync_health['kb_version_drift']}")
+            print_info(f"    → Run 'WAI sync' to synchronize with hub")
+
         if results['errors']:
             print_info("\n  Errors:")
             for error in results['errors']:
@@ -374,6 +401,31 @@ class CloseoutProcessor:
             "session_refreshed": session_refreshed,
             "briefing_emitted": bool(hook_output)
         }
+
+    def _check_sync_health(self) -> Optional[Dict[str, Any]]:
+        """
+        Check sync health with hub.
+
+        Returns:
+            Sync health dict or None if no hub found
+        """
+        from .hub import HubManager
+        from .sync_manager import SyncManager
+
+        # Find hub
+        hub_manager = HubManager()
+        hub_path = hub_manager.auto_discover_hub(self.spoke_dir, verbose=False)
+
+        if not hub_path:
+            return None
+
+        try:
+            sync_manager = SyncManager(hub_path, self.spoke_dir)
+            health = sync_manager.calculate_sync_health()
+            return health
+        except Exception:
+            # Silently skip if sync health check fails
+            return None
 
 
 def generate_closeout() -> None:

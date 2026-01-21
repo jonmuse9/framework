@@ -5,8 +5,16 @@
   "last_sync": null,
   "sync_status": "never_synced",
   "sync_history": [],
+  "sync_health": {
+    "status": "never_synced",
+    "days_since_last_sync": null,
+    "kb_version_drift": null,
+    "pending_signals": 0,
+    "last_check": null
+  },
   "_instructions": {
     "for_llms": "This file tracks synchronization between this spoke and its hub. Read only.",
-    "sync_statuses": ["never_synced", "synced", "pending_push", "pending_pull", "conflict"]
+    "sync_statuses": ["never_synced", "synced", "pending_push", "pending_pull", "conflict"],
+    "health_statuses": ["healthy", "stale", "outdated", "never_synced"]
   }
 }

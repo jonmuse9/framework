@@ -642,5 +642,257 @@ class TestSignalUpload(unittest.TestCase):
         self.assertNotEqual(hash1, hash2)
 
 
+class TestSyncHealthCalculation(unittest.TestCase):
+    """Test sync health calculation."""
+
+    def setUp(self):
+        """Create temporary directories and files for testing."""
+        self.temp_dir = tempfile.mkdtemp()
+        self.hub_path = Path(self.temp_dir) / 'hub'
+        self.spoke_path = Path(self.temp_dir) / 'spoke'
+
+        self.hub_path.mkdir(parents=True)
+        self.spoke_path.mkdir(parents=True)
+        (self.spoke_path / 'WAI-Spoke').mkdir(parents=True)
+        (self.hub_path / 'knowledge').mkdir(parents=True)
+
+        self.manager = SyncManager(self.hub_path, self.spoke_path)
+
+    def tearDown(self):
+        """Clean up temporary directories."""
+        shutil.rmtree(self.temp_dir)
+
+    def test_sync_health_never_synced(self):
+        """Test health when never synced."""
+        health = self.manager.calculate_sync_health()
+
+        self.assertEqual(health['status'], 'never_synced')
+        self.assertIsNone(health['days_since_last_sync'])
+        self.assertIsNone(health['kb_version_drift'])
+        self.assertEqual(health['pending_signals'], 0)
+        self.assertIsNotNone(health['last_check'])
+
+    def test_sync_health_healthy(self):
+        """Test health when recently synced and up to date."""
+        # Create sync metadata with recent sync
+        sync_data = {
+            "version": "1.0",
+            "spoke_kb_version": "1.5.0",
+            "hub_kb_version": "1.5.0",
+            "last_sync": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "sync_status": "synced"
+        }
+        sync_file = self.spoke_path / 'WAI-Spoke' / 'WAI-KB-Sync.json'
+        with open(sync_file, 'w') as f:
+            json.dump(sync_data, f)
+
+        # Create hub manifest
+        hub_manifest = {"version": "1.5.0"}
+        with open(self.hub_path / 'knowledge' / 'kb-manifest.json', 'w') as f:
+            json.dump(hub_manifest, f)
+
+        health = self.manager.calculate_sync_health()
+
+        self.assertEqual(health['status'], 'healthy')
+        self.assertEqual(health['days_since_last_sync'], 0)
+        self.assertIsNone(health['kb_version_drift'])
+        self.assertEqual(health['pending_signals'], 0)
+
+    def test_sync_health_stale_by_time(self):
+        """Test health when synced > 30 days ago."""
+        from datetime import timedelta
+
+        # Create sync metadata with old sync (45 days ago)
+        last_sync_time = datetime.now(timezone.utc) - timedelta(days=45)
+        sync_data = {
+            "version": "1.0",
+            "spoke_kb_version": "1.5.0",
+            "hub_kb_version": "1.5.0",
+            "last_sync": last_sync_time.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "sync_status": "synced"
+        }
+        sync_file = self.spoke_path / 'WAI-Spoke' / 'WAI-KB-Sync.json'
+        with open(sync_file, 'w') as f:
+            json.dump(sync_data, f)
+
+        # Create hub manifest (same version)
+        hub_manifest = {"version": "1.5.0"}
+        with open(self.hub_path / 'knowledge' / 'kb-manifest.json', 'w') as f:
+            json.dump(hub_manifest, f)
+
+        health = self.manager.calculate_sync_health()
+
+        self.assertEqual(health['status'], 'stale')
+        self.assertEqual(health['days_since_last_sync'], 45)
+        self.assertIsNone(health['kb_version_drift'])
+
+    def test_sync_health_stale_by_minor_version(self):
+        """Test health when minor version drift exists."""
+        # Create sync metadata with recent sync but old version
+        sync_data = {
+            "version": "1.0",
+            "spoke_kb_version": "1.3.0",
+            "hub_kb_version": "1.3.0",
+            "last_sync": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "sync_status": "synced"
+        }
+        sync_file = self.spoke_path / 'WAI-Spoke' / 'WAI-KB-Sync.json'
+        with open(sync_file, 'w') as f:
+            json.dump(sync_data, f)
+
+        # Create hub manifest with newer minor version
+        hub_manifest = {"version": "1.5.0"}
+        with open(self.hub_path / 'knowledge' / 'kb-manifest.json', 'w') as f:
+            json.dump(hub_manifest, f)
+
+        health = self.manager.calculate_sync_health()
+
+        self.assertEqual(health['status'], 'stale')
+        self.assertEqual(health['kb_version_drift'], '2 minor versions behind')
+
+    def test_sync_health_outdated_by_time(self):
+        """Test health when synced > 90 days ago."""
+        from datetime import timedelta
+
+        # Create sync metadata with very old sync (100 days ago)
+        last_sync_time = datetime.now(timezone.utc) - timedelta(days=100)
+        sync_data = {
+            "version": "1.0",
+            "spoke_kb_version": "1.5.0",
+            "hub_kb_version": "1.5.0",
+            "last_sync": last_sync_time.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "sync_status": "synced"
+        }
+        sync_file = self.spoke_path / 'WAI-Spoke' / 'WAI-KB-Sync.json'
+        with open(sync_file, 'w') as f:
+            json.dump(sync_data, f)
+
+        # Create hub manifest
+        hub_manifest = {"version": "1.5.0"}
+        with open(self.hub_path / 'knowledge' / 'kb-manifest.json', 'w') as f:
+            json.dump(hub_manifest, f)
+
+        health = self.manager.calculate_sync_health()
+
+        self.assertEqual(health['status'], 'outdated')
+        self.assertEqual(health['days_since_last_sync'], 100)
+
+    def test_sync_health_outdated_by_major_version(self):
+        """Test health when major version drift exists."""
+        # Create sync metadata with recent sync but old major version
+        sync_data = {
+            "version": "1.0",
+            "spoke_kb_version": "1.5.0",
+            "hub_kb_version": "1.5.0",
+            "last_sync": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "sync_status": "synced"
+        }
+        sync_file = self.spoke_path / 'WAI-Spoke' / 'WAI-KB-Sync.json'
+        with open(sync_file, 'w') as f:
+            json.dump(sync_data, f)
+
+        # Create hub manifest with newer major version
+        hub_manifest = {"version": "3.0.0"}
+        with open(self.hub_path / 'knowledge' / 'kb-manifest.json', 'w') as f:
+            json.dump(hub_manifest, f)
+
+        health = self.manager.calculate_sync_health()
+
+        self.assertEqual(health['status'], 'outdated')
+        self.assertEqual(health['kb_version_drift'], '2 major versions behind')
+
+    def test_sync_health_pending_signals(self):
+        """Test counting pending signals."""
+        # Create sync metadata
+        sync_data = {
+            "version": "1.0",
+            "spoke_kb_version": "1.5.0",
+            "hub_kb_version": "1.5.0",
+            "last_sync": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "sync_status": "synced"
+        }
+        sync_file = self.spoke_path / 'WAI-Spoke' / 'WAI-KB-Sync.json'
+        with open(sync_file, 'w') as f:
+            json.dump(sync_data, f)
+
+        # Create hub manifest
+        hub_manifest = {"version": "1.5.0"}
+        with open(self.hub_path / 'knowledge' / 'kb-manifest.json', 'w') as f:
+            json.dump(hub_manifest, f)
+
+        # Create signals file with pending signals
+        signals_file = self.spoke_path / 'WAI-Spoke' / 'WAI-Signals.jsonl'
+
+        signal1 = {
+            "timestamp": "2025-01-21T12:00:00Z",
+            "by": "Claude Sonnet 4.5",
+            "offers": [{"type": "pattern", "topic": "Test1", "impact": 9, "context": "Test"}],
+            "flags": {}
+        }
+
+        signal2 = {
+            "timestamp": "2025-01-21T12:00:00Z",
+            "by": "Claude Sonnet 4.5",
+            "offers": [{"type": "pattern", "topic": "Test2", "impact": 5, "context": "Test"}],
+            "flags": {"ready_for_hub": True}
+        }
+
+        signal3 = {
+            "timestamp": "2025-01-21T12:00:00Z",
+            "by": "Claude Sonnet 4.5",
+            "offers": [{"type": "pattern", "topic": "Test3", "impact": 9, "context": "Test"}],
+            "flags": {},
+            "uploaded_to_hub_at": "2025-01-21T11:00:00Z"
+        }
+
+        with open(signals_file, 'w') as f:
+            f.write(json.dumps(signal1) + '\n')
+            f.write(json.dumps(signal2) + '\n')
+            f.write(json.dumps(signal3) + '\n')
+
+        health = self.manager.calculate_sync_health()
+
+        # Should count 2 pending signals (high impact + flagged, but not uploaded)
+        self.assertEqual(health['pending_signals'], 2)
+
+    def test_sync_health_corrupted_metadata(self):
+        """Test health when metadata file is corrupted."""
+        # Create corrupted sync file
+        sync_file = self.spoke_path / 'WAI-Spoke' / 'WAI-KB-Sync.json'
+        with open(sync_file, 'w') as f:
+            f.write("corrupted json {{{")
+
+        health = self.manager.calculate_sync_health()
+
+        # Should treat as never synced
+        self.assertEqual(health['status'], 'never_synced')
+        self.assertIsNone(health['days_since_last_sync'])
+
+    def test_sync_health_patch_version_drift(self):
+        """Test health with patch version drift."""
+        # Create sync metadata
+        sync_data = {
+            "version": "1.0",
+            "spoke_kb_version": "1.5.0",
+            "hub_kb_version": "1.5.0",
+            "last_sync": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "sync_status": "synced"
+        }
+        sync_file = self.spoke_path / 'WAI-Spoke' / 'WAI-KB-Sync.json'
+        with open(sync_file, 'w') as f:
+            json.dump(sync_data, f)
+
+        # Create hub manifest with patch version bump
+        hub_manifest = {"version": "1.5.3"}
+        with open(self.hub_path / 'knowledge' / 'kb-manifest.json', 'w') as f:
+            json.dump(hub_manifest, f)
+
+        health = self.manager.calculate_sync_health()
+
+        # Patch version drift shouldn't trigger stale status alone
+        self.assertEqual(health['status'], 'healthy')
+        self.assertEqual(health['kb_version_drift'], '3 patch versions behind')
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -311,6 +311,7 @@ Examples:
         # Sync command (structure upgrade)
         sync_parser = subparsers.add_parser('sync', help='Upgrade spoke structure')
         sync_parser.add_argument('--all', action='store_true', help='Upgrade all spokes')
+        sync_parser.add_argument('--check', action='store_true', help='Check sync health without performing sync')
 
         # Closeout command
         closeout_parser = subparsers.add_parser('closeout', help='Generate session closeout')
@@ -3456,7 +3457,7 @@ Examples:
     def _cmd_sync(self, args):
         """Handle sync command."""
         from .commands.sync import sync_spoke
-        sync_spoke(all_spokes=args.all)
+        sync_spoke(all_spokes=args.all, check_only=args.check)
 
     def _cmd_update(self, args):
         """Handle update command."""

@@ -106,4 +106,42 @@ def show_status(path: str = '.') -> None:
         except:
             pass
 
+    # Check sync health
+    if stored_hub:
+        from ..sync_manager import SyncManager
+
+        try:
+            hub_path = Path(stored_hub)
+            sync_manager = SyncManager(hub_path, project_path)
+            health = sync_manager.calculate_sync_health()
+
+            print(f"\n    Sync Health:")
+            status_symbol = {
+                'healthy': '✓',
+                'stale': '⚠',
+                'outdated': '✗',
+                'never_synced': 'ℹ'
+            }.get(health['status'], '?')
+
+            print(f"   {status_symbol} Status: {health['status']}")
+
+            if health['days_since_last_sync'] is not None:
+                print(f"   Last sync: {health['days_since_last_sync']} days ago")
+
+            if health['kb_version_drift']:
+                print(f"   KB drift: {health['kb_version_drift']}")
+
+            if health['pending_signals'] > 0:
+                print(f"   Pending signals: {health['pending_signals']}")
+
+            # Show recommendation if not healthy
+            if health['status'] in ['stale', 'outdated']:
+                print(f"   → Run 'WAI sync' to update")
+            elif health['status'] == 'never_synced':
+                print(f"   → Run 'WAI sync' to synchronize with hub")
+
+        except Exception:
+            # Silently skip if sync health check fails
+            pass
+
     print()  # Final newline

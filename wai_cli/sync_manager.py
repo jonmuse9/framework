@@ -587,3 +587,140 @@ class SyncManager:
 
         except IOError as e:
             raise IOError(f"Failed to update spoke signals file: {e}") from e
+
+    def calculate_sync_health(self) -> Dict[str, Any]:
+        """
+        Calculate sync health metrics.
+
+        Returns:
+            Dict with keys:
+                - status: "healthy" | "stale" | "outdated" | "never_synced"
+                - days_since_last_sync: int or None
+                - kb_version_drift: str or None (e.g., "2 versions behind")
+                - pending_signals: int
+                - last_check: timestamp
+
+        Examples:
+            >>> manager = SyncManager(hub_path, spoke_path)
+            >>> health = manager.calculate_sync_health()
+            >>> if health['status'] != 'healthy':
+            ...     print(f"Sync recommended: {health['status']}")
+        """
+        kb_sync_file = self.spoke_wai_dir / 'WAI-KB-Sync.json'
+
+        # Load sync metadata
+        sync_data = None
+        if kb_sync_file.exists():
+            try:
+                with open(kb_sync_file, 'r', encoding='utf-8') as f:
+                    sync_data = json.load(f)
+            except (json.JSONDecodeError, IOError):
+                # Corrupted file - treat as never synced
+                sync_data = None
+
+        # Calculate days since last sync
+        days_since_last_sync = None
+        last_sync = sync_data.get('last_sync') if sync_data else None
+
+        if last_sync:
+            try:
+                last_sync_dt = datetime.fromisoformat(last_sync.replace('Z', '+00:00'))
+                now = datetime.now(timezone.utc)
+                delta = now - last_sync_dt
+                days_since_last_sync = delta.days
+            except (ValueError, AttributeError):
+                # Invalid timestamp - treat as never synced
+                last_sync = None
+
+        # Calculate KB version drift
+        kb_version_drift = None
+        if sync_data and self.hub_kb_dir.exists():
+            try:
+                hub_version = self._get_hub_kb_version()
+                spoke_version = sync_data.get('spoke_kb_version', '0.0.0')
+
+                comparison = self._compare_versions(spoke_version, hub_version)
+
+                if comparison < 0:
+                    # Spoke is behind hub - calculate drift
+                    hub_parts = [int(x) for x in hub_version.split('.')]
+                    spoke_parts = [int(x) for x in spoke_version.split('.')]
+
+                    # Pad to same length
+                    max_len = max(len(hub_parts), len(spoke_parts))
+                    hub_parts.extend([0] * (max_len - len(hub_parts)))
+                    spoke_parts.extend([0] * (max_len - len(spoke_parts)))
+
+                    # Determine drift type
+                    if hub_parts[0] > spoke_parts[0]:
+                        # Major version drift
+                        major_diff = hub_parts[0] - spoke_parts[0]
+                        kb_version_drift = f"{major_diff} major version{'s' if major_diff > 1 else ''} behind"
+                    elif hub_parts[1] > spoke_parts[1]:
+                        # Minor version drift
+                        minor_diff = hub_parts[1] - spoke_parts[1]
+                        kb_version_drift = f"{minor_diff} minor version{'s' if minor_diff > 1 else ''} behind"
+                    else:
+                        # Patch version drift
+                        patch_diff = hub_parts[2] - spoke_parts[2]
+                        kb_version_drift = f"{patch_diff} patch version{'s' if patch_diff > 1 else ''} behind"
+            except (ValueError, AttributeError, FileNotFoundError):
+                # Can't determine drift - skip
+                kb_version_drift = None
+
+        # Count pending signals
+        pending_signals = 0
+        signals_file = self.spoke_wai_dir / 'WAI-Signals.jsonl'
+
+        if signals_file.exists():
+            try:
+                with open(signals_file, 'r', encoding='utf-8') as f:
+                    for line in f:
+                        line = line.strip()
+                        if not line:
+                            continue
+
+                        try:
+                            signal = json.loads(line)
+
+                            # Check if signal is ready for hub and not uploaded
+                            flags = signal.get('flags', {})
+                            impact = self._extract_max_impact(signal)
+                            already_uploaded = 'uploaded_to_hub_at' in signal
+
+                            ready_for_hub = flags.get('ready_for_hub', False)
+                            high_impact = impact >= 8
+
+                            if (ready_for_hub or high_impact) and not already_uploaded:
+                                pending_signals += 1
+                        except json.JSONDecodeError:
+                            # Skip malformed signals
+                            continue
+            except IOError:
+                # Can't read signals - assume 0 pending
+                pass
+
+        # Determine health status
+        if last_sync is None:
+            status = "never_synced"
+        elif days_since_last_sync is not None:
+            # Check for version drift
+            has_major_drift = kb_version_drift and 'major' in kb_version_drift
+            has_minor_drift = kb_version_drift and 'minor' in kb_version_drift
+
+            if days_since_last_sync > 90 or has_major_drift:
+                status = "outdated"
+            elif days_since_last_sync > 30 or has_minor_drift:
+                status = "stale"
+            else:
+                status = "healthy"
+        else:
+            status = "healthy"
+
+        return {
+            'status': status,
+            'days_since_last_sync': days_since_last_sync,
+            'kb_version_drift': kb_version_drift,
+            'pending_signals': pending_signals,
+            'last_check': datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        }
