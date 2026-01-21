@@ -169,16 +169,19 @@ class SyncManager:
         # Get versions
         if hub_version is None:
             hub_version = self._get_hub_kb_version()
-        spoke_version = self._get_spoke_kb_version()
+
+        # For download, spoke version should match hub version
+        # For other sync types, get current spoke version
+        if sync_type == 'download':
+            spoke_version = hub_version
+            sync_data['sync_status'] = 'synced'
+        else:
+            spoke_version = self._get_spoke_kb_version()
 
         # Update metadata
         sync_data['hub_kb_version'] = hub_version
         sync_data['spoke_kb_version'] = spoke_version
         sync_data['last_sync'] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-
-        # Update sync status
-        if sync_type == 'download':
-            sync_data['sync_status'] = 'synced'
 
         # Add to sync history
         if 'sync_history' not in sync_data:
