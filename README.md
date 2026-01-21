@@ -293,65 +293,63 @@ The `WAI` command-line interface orchestrates your Hub, Spoke-Projects, and the 
 
 ### Command Glossary
 
-> **For detailed documentation, see [docs/CLI_REFERENCE.md](docs/CLI_REFERENCE.md)**
-
 ```bash
 # Core Commands
-wai init [path]                    # Initialize Wheelwright in a project
-wai status                         # Show current spoke state and health
-wai absorbe / update               # Process seed folders, archive sprawl
-wai context                        # Output context for LLM paste
-wai version                        # Show Wheelwright version
+WAI-CLI init [path]                    # Initialize Wheelwright in a project
+WAI-CLI status                         # Show current spoke state and health
+WAI absorbe / update               # Process seed folders, archive sprawl
+WAI context                        # Output context for LLM paste
+WAI version                        # Show Wheelwright version
 
 # Session Management
-wai closeout                       # Generate session closeout
-wai shipit                         # Closeout + git commit
-wai time                           # Show token usage estimate
-wai stats                          # Show session analytics
-wai sync [--all]                   # Upgrade spoke structure
+WAI closeout                       # Generate session closeout
+WAI shipit                         # Closeout + git commit
+WAI time                           # Show token usage estimate
+WAI stats                          # Show session analytics
+WAI sync [--all]                   # Upgrade spoke structure
 
 # Hub Management
-wai hub create [path]              # Create your personal Hub
-wai hub locate                     # Find Hub location on filesystem
+WAI hub create [path]              # Create your personal Hub
+WAI hub locate                     # Find Hub location on filesystem
 
 # Project Management
-wai projects add [--scan PATH...]  # Register projects with hub
-wai projects list [--group NAME]   # List registered projects
+WAI projects add [--scan PATH...]  # Register projects with hub
+WAI projects list [--group NAME]   # List registered projects
 
 # Group Management
-wai group create <name>            # Create project group
-wai group list [-v]                # List all groups
-wai group add-spoke <group> <spoke> # Add spoke to group
-wai group remove-spoke <group> <spoke> # Remove spoke from group
-wai group delete <name>            # Delete a group
+WAI group create <name>            # Create project group
+WAI group list [-v]                # List all groups
+WAI group add-spoke <group> <spoke> # Add spoke to group
+WAI group remove-spoke <group> <spoke> # Remove spoke from group
+WAI group delete <name>            # Delete a group
 
 # Baseline Tracking
-wai baseline enable                # Enable baseline mode
-wai baseline disable               # Disable and lock baseline
-wai baseline status                # Show baseline status
-wai baseline run                   # Run baseline comparison
+WAI baseline enable                # Enable baseline mode
+WAI baseline disable               # Disable and lock baseline
+WAI baseline status                # Show baseline status
+WAI baseline run                   # Run baseline comparison
 
 # Template Management
-wai template create <name>         # Create reusable template
-wai template list                  # List available templates
-wai template apply <name> <path>   # Apply template to project
-wai template delete <name>         # Delete a template
+WAI template create <name>         # Create reusable template
+WAI template list                  # List available templates
+WAI template apply <name> <path>   # Apply template to project
+WAI template delete <name>         # Delete a template
 
 # IDE Integration
-wai configure-ide detect           # Detect IDEs in use
-wai configure-ide list             # List supported IDEs
-wai configure-ide setup [ide]      # Setup IDE configuration
-wai configure-ide capabilities     # Show IDE capabilities
-wai configure-ide optimize         # Get optimization suggestions
+WAI configure-ide detect           # Detect IDEs in use
+WAI configure-ide list             # List supported IDEs
+WAI configure-ide setup [ide]      # Setup IDE configuration
+WAI configure-ide capabilities     # Show IDE capabilities
+WAI configure-ide optimize         # Get optimization suggestions
 
 # Interactive Mode
-wai                                # Launch interactive menu (context-aware)
+WAI                                # Launch interactive menu (context-aware)
 ```
 
 **Not Yet Implemented:**
-- `wai hub status` - Show Hub health and metrics (use `wai projects list` instead)
-- `wai spoke list/add/remove` - Spoke management (use `wai projects` commands)
-- `wai help` - Dedicated help command (use `wai --help` or interactive mode)
+- `WAI hub status` - Show Hub health and metrics (use `WAI projects list` instead)
+- `WAI spoke list/add/remove` - Spoke management (use `WAI projects` commands)
+- `WAI help` - Dedicated help command (use `WAI --help` or interactive mode)
 
 ---
 
