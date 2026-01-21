@@ -977,42 +977,159 @@ Signals: 15 high-impact learnings
 
 ### `sync`
 
-Upgrade spoke structure to latest version and prepare for hub synchronization.
+Synchronize spoke with hub: upgrade structure, download knowledge base, and upload signals.
 
-**Purpose:** Update spoke structure from older versions (e.g., v2.0 to v2.1), migrate files, and sync metadata with hub.
+**Purpose:** Perform comprehensive hub-spoke synchronization including structure upgrades, KB updates from hub, and signal uploads to hub. Ensures spoke stays current with hub learnings and contributes its own high-impact patterns back to the hub.
 
 **Syntax:**
 ```bash
-wai sync [--all]
+wai sync [--all] [--check]
 ```
 
 **Arguments:**
 - None (operates on current spoke)
 
 **Flags:**
-- `--all` - Upgrade all registered spokes in hub
+- `--all` - Sync all registered spokes with hub (batch operation)
+- `--check` - Check sync health without performing sync (health monitoring only)
 
 **Examples:**
 ```bash
-# Sync current spoke
+# Sync current spoke with hub
 wai sync
 
 # Sync all spokes registered with hub
 wai sync --all
+
+# Check sync health without syncing
+wai sync --check
 ```
 
-**Upgrade Operations:**
-- Migrates legacy `__seed/` to `WAI-Spoke/`
-- Updates structure version in WAI-State.json
-- Adds missing files (WAI-Signals.jsonl, .gitignore, etc.)
-- Updates CLAUDE.md with latest IDE instructions
-- Validates WAI-State.json schema
+**Sync Workflow:**
+
+1. **Structure Upgrade (Phase 1)**
+   - Auto-detects spoke structure version
+   - Upgrades legacy structures (v1.0, v2.0) to current (v2.1)
+   - Migrates `__seed/` to `WAI-Spoke/` if needed
+   - Adds missing files (WAI-Signals.jsonl, .gitignore, etc.)
+   - Updates CLAUDE.md with latest IDE instructions
+
+2. **KB Download (Phase 2)**
+   - Checks hub KB version vs spoke KB version
+   - Downloads updates if hub has newer patterns/learnings
+   - Copies hub/knowledge/ to spoke/WAI-Spoke/hub-knowledge/
+   - Updates WAI-KB-Sync.json with sync metadata
+   - Backs up existing KB before replacing
+
+3. **Signal Upload (Phase 3)**
+   - Scans WAI-Signals.jsonl for high-impact signals (impact >= 8)
+   - Filters for signals marked ready_for_hub or impact >= 8
+   - Skips already-uploaded signals and duplicates
+   - Uploads to hub/signals/by-spoke/[spoke-name]/
+   - Marks uploaded signals with uploaded_to_hub_at timestamp
+
+**Output:**
+```
+Checking spoke structure version...
+   ✓ Spoke structure is current (v2.1)
+
+    ✓ Spoke structure ready
+   Hub: /home/user/wheelwright-hub
+   Spoke: my-project
+
+    Checking hub KB...
+   KB update available: v1.0.0 -> v1.2.0
+   Downloading KB updates...
+   ✓ Downloaded 12 patterns, 8 learnings
+   ✓ Synced to v1.2.0
+
+    Scanning signals...
+   ✓ Uploaded 3 high-impact signal(s)
+   ℹ Skipped 2 duplicate(s)
+
+    ✓ Sync complete
+```
+
+**Batch Sync (--all flag):**
+```
+Loading hub registry...
+   Found 5 registered spoke(s)
+
+    Syncing all spokes with hub...
+   [1/5] project-a: ✓ Synced
+   [2/5] project-b: ✓ Synced
+   [3/5] project-c: ✗ Path not found
+   [4/5] project-d: ✓ Synced
+   [5/5] project-e: ✓ Synced
+
+    Summary: 4 succeeded, 1 failed
+
+    Failed spokes:
+      - project-c: Path not found
+```
+
+**Health Check (--check flag):**
+```
+Checking sync health...
+   Hub: /home/user/wheelwright-hub
+   Spoke: my-project
+
+    Sync Health Report
+   ==================================================
+
+    Status: ⚠ STALE
+   Last sync: 35 days ago
+   KB version drift: 2 minor versions behind
+   Pending signals: 5 ready for upload
+
+   ==================================================
+
+    ⚠ Sync recommended
+   Run 'WAI sync' to update KB and upload signals
+```
+
+**Health Status Indicators:**
+
+| Status | Symbol | Meaning | Recommendation |
+|--------|--------|---------|----------------|
+| `healthy` | ✓ | Synced within 30 days, KB current | No action needed |
+| `stale` | ⚠ | Synced 30-90 days ago OR minor version drift | Sync recommended |
+| `outdated` | ✗ | Synced >90 days ago OR major version drift | Sync strongly recommended |
+| `never_synced` | ℹ | Never synced with hub | First sync needed |
 
 **Version Migrations:**
+- 1.0 → 2.1: Migrates .WAI/ to WAI-Spoke/, adds signals support
 - 2.0 → 2.1: Adds WAI-Signals.jsonl, updates analytics schema
 - Future versions: Automatic backward-compatible upgrades
 
-**Related Commands:** absorbe, init
+**Error Handling:**
+
+| Error | Cause | Resolution |
+|-------|-------|------------|
+| `No hub found` | Hub path not discovered | Run `wai hub create` or set `$WHEELWRIGHT_HUB_PATH` |
+| `Hub KB not found` | Hub knowledge directory missing | KB sync skipped, structure upgrade proceeds |
+| `KB sync failed` | Download error, corrupted files | Previous KB version preserved, rollback automatic |
+| `No spoke structure found` | Not initialized | Run `wai init` to initialize project |
+| `Path not found` (--all) | Registered spoke moved/deleted | Update registry or remove project |
+
+**Exit Codes:**
+
+| Code | Meaning |
+|------|---------|
+| 0 | Success (or healthy status for --check) |
+| 1 | Sync needed (for --check) or sync failed |
+
+**Notes:**
+- Safe to run multiple times (idempotent)
+- Automatically backs up KB before replacing
+- Does not overwrite existing WAI-Signals.jsonl (appends only)
+- Deduplicates signals by content hash
+- Batch sync (--all) continues on individual failures
+- Health check mode (--check) exits with code 1 if sync needed
+
+**Related Commands:** absorbe, init, hub create, projects add
+
+**See Also:** [Detailed Sync Reference](commands/sync.md) for troubleshooting and advanced scenarios
 
 ---
 

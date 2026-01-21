@@ -579,6 +579,149 @@ echo "Read WAI-Spoke/WAI-Guide.md for project context" > .your-ai-tool-config
 
 ---
 
+## Hub Synchronization
+
+**Keep all your spokes synchronized with the latest learnings.**
+
+The hub acts as a central knowledge repository that collects patterns from all your projects and distributes them back. This creates a continuous learning loop where each project benefits from insights gained in others.
+
+### What is the Knowledge Base (KB)?
+
+The hub's knowledge base contains consolidated patterns, learnings, and best practices aggregated from all connected spokes. When you sync, your spoke downloads the latest KB and uploads its own high-impact signals.
+
+**Knowledge Base Structure:**
+```
+hub/
+└── knowledge/
+    ├── kb-manifest.json      # Version and metadata
+    ├── patterns/             # Reusable patterns
+    │   ├── error-handling.md
+    │   ├── api-design.md
+    │   └── testing.md
+    └── learnings/            # Cross-project insights
+        ├── performance.md
+        └── architecture.md
+```
+
+### What are Signals?
+
+Signals are high-impact learnings (impact >= 8) that your spoke shares back to the hub. They capture breakthrough insights, architectural decisions, and patterns worth spreading to other projects.
+
+**Signal Flow:**
+```
+Spoke (Your Project)
+    ↓ Work produces insights
+WAI-Signals.jsonl (impact >= 8)
+    ↓ wai sync uploads
+hub/signals/by-spoke/[project-name]/
+    ↓ Hub processes and consolidates
+hub/knowledge/ (KB updated)
+    ↓ wai sync downloads
+All Spokes (Updated KB)
+```
+
+### Sync Workflow
+
+**Automatic Three-Phase Sync:**
+
+1. **Structure Upgrade** - Auto-upgrades spoke to latest version (v2.1)
+2. **KB Download** - Downloads updated patterns and learnings from hub
+3. **Signal Upload** - Uploads your high-impact signals to hub
+
+**Running Sync:**
+```bash
+# Sync current spoke
+wai sync
+
+# Check if sync is needed (no changes)
+wai sync --check
+
+# Sync all registered spokes
+wai sync --all
+```
+
+### When to Sync
+
+**Recommended Sync Frequency:**
+- **After major milestones** - Share breakthrough patterns
+- **Before starting new features** - Get latest hub learnings
+- **Every 30 days** - Keep KB current (automatic health checks warn you)
+- **After closeout** - Signals are logged, ready to share
+
+**Health Monitoring:**
+```bash
+# Check sync health without syncing
+wai sync --check
+
+# Output shows status and recommendations:
+#   ✓ healthy - No action needed
+#   ⚠ stale - Sync recommended
+#   ✗ outdated - Sync strongly recommended
+#   ℹ never_synced - First sync needed
+```
+
+### Knowledge Base Benefits
+
+**Why sync with the hub KB?**
+
+1. **Cross-Project Learning** - Patterns from one project help all projects
+2. **Consolidated Best Practices** - Hub aggregates and refines learnings
+3. **Avoid Reinventing** - Reuse solutions from your past projects
+4. **Continuous Improvement** - KB grows smarter with each sync
+5. **Team Consistency** - Shared hub keeps teams aligned
+
+**Example Pattern Sharing:**
+```
+Project A discovers efficient error handling pattern
+    ↓ Signals to hub (impact: 9)
+Hub adds to KB as reusable pattern
+    ↓ Next sync distributes to all spokes
+Project B, C, D receive error handling pattern
+    ↓ Apply pattern in their contexts
+Entire wheel benefits from one project's insight
+```
+
+### Signal Sharing Guidelines
+
+**What to signal (impact >= 8):**
+- Architectural breakthroughs
+- Performance optimizations (significant gains)
+- Novel problem-solving approaches
+- Critical bugs avoided through patterns
+- Cross-domain applicable solutions
+
+**What NOT to signal:**
+- Common knowledge (everyone knows this)
+- Obvious patterns (standard practices)
+- Project-specific implementation details
+- Minor refactorings (impact < 8)
+- Routine fixes without novel insight
+
+### Sync Health States
+
+| Health | Description | Action |
+|--------|-------------|--------|
+| **Healthy** | Synced within 30 days, KB current | Continue working |
+| **Stale** | 30-90 days since sync OR minor version drift | Run `wai sync` soon |
+| **Outdated** | >90 days since sync OR major version drift | Run `wai sync` now |
+| **Never Synced** | First sync pending | Run `wai sync` to connect |
+
+### Troubleshooting Sync Issues
+
+**Common Issues:**
+
+| Issue | Solution |
+|-------|----------|
+| "No hub found" | Run `wai hub create` or set `$WHEELWRIGHT_HUB_PATH` |
+| "Hub KB not found" | Hub created but no KB yet - will be created on first aggregation |
+| "KB sync failed" | Previous version preserved, check hub/knowledge/ permissions |
+| Duplicate signals skipped | Normal - hub deduplicates by content hash |
+| No signals uploaded | No high-impact signals ready (impact < 8 or already uploaded) |
+
+**For detailed troubleshooting, see:** [docs/commands/sync.md](docs/commands/sync.md)
+
+---
+
 ## How It Works
 
 ### Architecture

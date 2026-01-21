@@ -260,6 +260,138 @@ When you make a decision with **impact >= 8**, share it:
 
 ---
 
+## Hub Synchronization Workflow
+
+### When to Sync with Hub
+
+Sync keeps your spoke current with hub learnings and shares your insights back:
+
+**Recommended Sync Triggers:**
+- After completing major features (share learnings)
+- Before starting new work (get latest patterns)
+- Every 30 days (stay current with KB)
+- When session generates high-impact signals (impact >= 8)
+
+**Command:**
+```bash
+wai sync                 # Sync current spoke
+wai sync --check         # Check if sync needed (no changes)
+wai sync --all           # Sync all registered spokes
+```
+
+### Sync Process Overview
+
+**Three-Phase Automatic Workflow:**
+
+1. **Structure Upgrade** - Ensures spoke has latest version (v2.1)
+2. **KB Download** - Downloads updated patterns/learnings from hub
+3. **Signal Upload** - Uploads high-impact signals to hub
+
+### Hub Knowledge Base (KB)
+
+The hub KB contains consolidated patterns and learnings from all connected spokes.
+
+**What's in the KB:**
+- Reusable patterns (error handling, API design, testing)
+- Cross-project learnings (performance, architecture)
+- Aggregated best practices from all spokes
+
+**How it helps:**
+- Avoid reinventing solutions
+- Apply patterns from other projects
+- Learn from collective experience
+- Maintain consistency across work
+
+**KB Location in Spoke:**
+After sync, hub KB is available at: `WAI-Spoke/hub-knowledge/`
+
+### Signal Sharing to Hub
+
+When you make high-impact decisions (impact >= 8), they should flow to hub:
+
+**Signal Flow:**
+1. Add decision to WAI-State.json `decisions` array (impact >= 8)
+2. Append signal to WAI-Signals.jsonl
+3. Run `wai sync` to upload signals to hub
+4. Hub aggregates and consolidates learnings
+5. Next sync downloads updated KB to all spokes
+
+**What to signal:**
+- Architectural breakthroughs
+- Performance optimizations (significant gains)
+- Novel problem-solving approaches
+- Critical bugs avoided through patterns
+- Cross-domain applicable solutions
+
+**What NOT to signal:**
+- Common knowledge (everyone knows this)
+- Obvious patterns (standard practices)
+- Project-specific details (not generalizable)
+- Minor refactorings (impact < 8)
+- Routine fixes (no novel insight)
+
+### Sync Health Monitoring
+
+Check sync status at any time:
+
+```bash
+wai sync --check
+```
+
+**Health States:**
+- **Healthy** (✓) - Synced within 30 days, KB current → No action needed
+- **Stale** (⚠) - 30-90 days since sync OR minor KB drift → Sync recommended
+- **Outdated** (✗) - >90 days since sync OR major KB drift → Sync now
+- **Never Synced** (ℹ) - First sync pending → Run sync
+
+### During Closeout
+
+When running `'Closeout'` command:
+
+1. **Review high-impact decisions** - Any impact >= 8?
+2. **Check signals** - Verify WAI-Signals.jsonl has new entries
+3. **Recommend sync** - Mention if sync recommended after closeout
+4. **Update metadata** - WAI-KB-Sync.json tracks sync status
+
+**Example closeout reminder:**
+```
+Session closeout complete.
+
+High-impact learnings detected (3 signals with impact >= 8).
+Recommendation: Run 'wai sync' to share learnings with hub.
+```
+
+### Sync Metadata Files
+
+**WAI-KB-Sync.json** (Read-only for AI):
+- Tracks hub/spoke KB versions
+- Records sync history
+- Monitors sync health
+- Updated automatically by `wai sync`
+
+**Never manually edit this file.** Let sync command manage it.
+
+### Hub Discovery
+
+If you need to verify hub connection:
+
+```python
+import json
+from pathlib import Path
+
+state = json.loads(Path("WAI-Spoke/WAI-State.json").read_text())
+hub_path = state.get("wheelwright", {}).get("hub_path")
+
+print(f"Hub: {hub_path if hub_path else 'Not connected'}")
+```
+
+Or check environment:
+```bash
+echo $WHEELWRIGHT_HUB_PATH
+```
+
+---
+
 ## Session Continuity Commands
 
 Built-in commands for any AI session using Wheelwright:
